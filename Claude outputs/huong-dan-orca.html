@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sổ tay Orca + AI agent – Hoàng Thế Duyệt</title>
+<style>
+:root{
+  --bg:#f7f6f2;--card:#ffffff;--text:#24231f;--muted:#6b6960;--line:#e3e0d6;
+  --accent:#4f46b8;--accent-bg:#eeedfe;--teal:#0f6e56;--teal-bg:#e1f5ee;
+  --amber:#854f0b;--amber-bg:#faeeda;--red:#a32d2d;--red-bg:#fcebeb;
+  --code-bg:#f1efe8;--mono:ui-monospace,"Cascadia Code",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1b1b19;--card:#242422;--text:#e8e6dd;--muted:#a4a297;--line:#3a3935;
+  --accent:#afa9ec;--accent-bg:#2a2750;--teal:#5dcaa5;--teal-bg:#0f2e26;
+  --amber:#efb45a;--amber-bg:#3a2a10;--red:#f09595;--red-bg:#3d1a1a;--code-bg:#2e2e2b;}}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:16px}
+.wrap{display:flex;max-width:1280px;margin:0 auto}
+nav{position:sticky;top:0;align-self:flex-start;width:270px;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line)}
+nav h2{font-size:15px;margin:0 0 12px;color:var(--muted);font-weight:600}
+nav a{display:block;padding:5px 10px;border-radius:6px;color:var(--text);text-decoration:none;font-size:14px}
+nav a:hover{background:var(--accent-bg);color:var(--accent)}
+main{flex:1;padding:36px 48px 80px;min-width:0}
+header.hero{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 32px;margin-bottom:32px}
+header.hero h1{margin:0 0 6px;font-size:28px}
+header.hero p{margin:0;color:var(--muted)}
+section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 32px;margin-bottom:24px;scroll-margin-top:16px}
+h2{font-size:22px;margin:0 0 14px}
+h3{font-size:17px;margin:22px 0 8px}
+p{margin:8px 0}
+code{font-family:var(--mono);background:var(--code-bg);padding:1px 6px;border-radius:4px;font-size:.9em}
+pre{font-family:var(--mono);background:var(--code-bg);padding:14px 16px;border-radius:10px;overflow:auto;font-size:13.5px;line-height:1.55;margin:10px 0}
+pre code{background:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14.5px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:13.5px}
+.note,.warn,.tip,.danger{border-radius:10px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note{background:var(--accent-bg);border-left:4px solid var(--accent)}
+.tip{background:var(--teal-bg);border-left:4px solid var(--teal)}
+.warn{background:var(--amber-bg);border-left:4px solid var(--amber)}
+.danger{background:var(--red-bg);border-left:4px solid var(--red)}
+.note,.tip,.warn,.danger{border-top-left-radius:0;border-bottom-left-radius:0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:12px 0}
+.steps>li{counter-increment:s;position:relative;padding:12px 14px 12px 52px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.steps>li::before{content:counter(s);position:absolute;left:14px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:12px 0}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card b{display:block;margin-bottom:4px}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--teal-bg);color:var(--teal);font-weight:600}
+.tag.amber{background:var(--amber-bg);color:var(--amber)}
+.tag.red{background:var(--red-bg);color:var(--red)}
+.tree{white-space:pre}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}
+details summary{cursor:pointer;font-weight:600}
+@media (max-width:900px){nav{display:none}main{padding:20px}}
+@media print{nav{display:none}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <h2>Mục lục</h2>
+  <a href="#tong-quan">1. Tổng quan</a>
+  <a href="#bo-cong-cu">2. Bộ công cụ trên máy</a>
+  <a href="#git">3. Git trong 5 phút</a>
+  <a href="#thu-muc">4. Orca sắp xếp thư mục thế nào</a>
+  <a href="#giao-dien">5. Giao diện Orca</a>
+  <a href="#quy-trinh">6. Quy trình làm việc hằng ngày</a>
+  <a href="#nhieu-agent">7. Nhiều agent, nhiều project</a>
+  <a href="#quyen">8. Chế độ quyền &amp; an toàn</a>
+  <a href="#model">9. Model &amp; hạn mức</a>
+  <a href="#tai-khoan">10. Tài khoản &amp; cấu hình</a>
+  <a href="#github">11. Đưa lên GitHub, Pull Request</a>
+  <a href="#vscode">12. Kết hợp VS Code</a>
+  <a href="#su-co">13. Xử lý sự cố</a>
+  <a href="#quy-tac">14. Quy tắc vàng</a>
+  <a href="#lenh">15. Bảng lệnh nhanh</a>
+</nav>
+<main>
+
+<header class="hero">
+  <h1>Sổ tay Orca + AI coding agent</h1>
+  <p>Ghi lại toàn bộ quá trình cài đặt, khái niệm và cách dùng Orca cùng Claude Code, Codex, Antigravity CLI trên laptop Windows của bạn (cập nhật 08/11/2026).</p>
+</header>
+
+<!-- 1 -->
+<section id="tong-quan">
+<h2>1. Tổng quan: mỗi công cụ làm gì?</h2>
+<p>Hãy hình dung bạn là <b>trưởng nhóm</b>, các AI agent là <b>nhân viên</b>, còn Orca là <b>văn phòng</b> nơi bạn giao việc và theo dõi mọi người.</p>
+<div class="grid">
+  <div class="card"><b>Git</b>Lưu lịch sử code, quản lý nhánh. Là nền móng của mọi thứ.</div>
+  <div class="card"><b>GitHub CLI (<code>gh</code>)</b>Làm việc với website GitHub từ terminal: đăng nhập, tạo repo, tạo Pull Request.</div>
+  <div class="card"><b>Claude Code (<code>claude</code>)</b>AI agent của Anthropic, chạy trong terminal, tự đọc, sửa code, chạy lệnh.</div>
+  <div class="card"><b>Codex (<code>codex</code>)</b>AI agent của OpenAI, tương tự Claude Code, có sandbox trên Windows.</div>
+  <div class="card"><b>Antigravity CLI (<code>agy</code>)</b>AI agent của Google (thay cho Gemini CLI đã ngừng hỗ trợ tài khoản cá nhân).</div>
+  <div class="card"><b>Orca</b>“Bảng điều khiển”: tạo nhánh riêng cho từng việc, mở agent trong đó, thông báo, theo dõi hạn mức.</div>
+  <div class="card"><b>VS Code</b>Trình soạn code để đọc kỹ hoặc tự sửa tay.</div>
+</div>
+<div class="note">Orca <b>không có AI riêng</b>. Nó chỉ mở các agent (Claude, Codex, agy) và sắp xếp chỗ làm việc cho chúng. Nhánh, worktree, commit, merge đều là của <b>Git</b>. Gỡ Orca thì code và nhánh vẫn còn nguyên.</div>
+</section>
+
+<!-- 2 -->
+<section id="bo-cong-cu">
+<h2>2. Bộ công cụ đang có trên máy bạn</h2>
+<table>
+<tr><th>Công cụ</th><th>Phiên bản</th><th>Tài khoản / gói</th><th>Cài bằng</th></tr>
+<tr><td>Git</td><td>2.56</td><td>user: HoangDuyet2005 · theduyethg05@gmail.com</td><td><code>winget</code></td></tr>
+<tr><td>GitHub CLI</td><td>2.103.3</td><td>HoangDuyet2005 (HTTPS)</td><td><code>winget install GitHub.cli</code></td></tr>
+<tr><td>Node.js</td><td>v24</td><td>–</td><td>có sẵn</td></tr>
+<tr><td>Claude Code</td><td>2.1.318 (bản native, tự cập nhật)</td><td>thutrang270702@gmail.com · Claude Pro</td><td><code>irm https://claude.ai/install.ps1 | iex</code></td></tr>
+<tr><td>Codex</td><td>0.167.0</td><td>theduyethoang0105@gmail.com · ChatGPT Free</td><td><code>npm install -g @openai/codex@latest --include=optional</code></td></tr>
+<tr><td>Antigravity CLI</td><td>1.5.2</td><td>theduyethoang0105@gmail.com · Google AI Plus</td><td><code>irm https://antigravity.google/cli/install.ps1 | iex</code></td></tr>
+<tr><td>Orca</td><td>1.4.25x</td><td>–</td><td>file <code>orca-windows-setup.exe</code> từ GitHub Releases</td></tr>
+</table>
+<h3>Cấu hình Git đã bật</h3>
+<pre><code>core.longpaths=true      # cho phép đường dẫn dài (worktree nằm sâu)
+core.autocrlf=true       # tự xử lý ký tự xuống dòng Windows/Linux
+init.defaultBranch=main  # repo mới có nhánh chính tên main</code></pre>
+<h3>Đã gỡ / dọn sạch</h3>
+<ul>
+<li>Gemini CLI: Google ngừng phục vụ tài khoản cá nhân từ 18/06/2026, đã thay bằng <code>agy</code>.</li>
+<li>Antigravity IDE và app Antigravity 2.0: trùng chức năng với VS Code + Orca.</li>
+<li>Thông tin đăng nhập Git của công ty cũ (<code>git.nemoditech.vn</code>).</li>
+</ul>
+</section>
+
+<!-- 3 -->
+<section id="git">
+<h2>3. Git trong 5 phút: vở chính và tờ nháp</h2>
+<div class="tip"><b>Hình ảnh dễ nhớ:</b> <code>main</code> là <b>vở chính</b>, chỉ chép bài đã đúng. Mỗi <b>nhánh</b> là một <b>tờ nháp</b> giao cho agent làm thử. Nháp đúng thì <b>chép vào vở</b> (merge), nháp sai thì vứt, vở không sao.</div>
+<table>
+<tr><th>Khái niệm</th><th>Nghĩa đơn giản</th></tr>
+<tr><td><b>Repo</b></td><td>Thư mục project có Git quản lý (có thư mục ẩn <code>.git</code>).</td></tr>
+<tr><td><b>Commit</b></td><td>Một lần “chụp ảnh” lưu lại trạng thái code, kèm lời mô tả. Mỗi commit có mã như <code>c46da48</code>.</td></tr>
+<tr><td><b>Nhánh (branch)</b></td><td>Chỉ là <b>một cái tên trỏ vào một commit</b>. Tạo nhánh gần như không tốn gì.</td></tr>
+<tr><td><b>main</b></td><td>Nhánh chính: bản code chính thức, luôn chạy được. Không làm việc trực tiếp trên nó.</td></tr>
+<tr><td><b>Worktree</b></td><td>Tính năng Git cho phép <b>mở nhiều nhánh cùng lúc</b>, mỗi nhánh một thư mục riêng.</td></tr>
+<tr><td><b>Merge</b></td><td>Gộp công việc của một nhánh vào nhánh khác (thường là vào <code>main</code>).</td></tr>
+<tr><td><b>Fast-forward</b></td><td>Kiểu merge đơn giản nhất: <code>main</code> chỉ việc “dời tên” tới commit mới, không có xung đột.</td></tr>
+<tr><td><b>Push / Pull</b></td><td>Đẩy commit lên GitHub / kéo commit mới từ GitHub về.</td></tr>
+</table>
+<h3>Vòng đời một nhánh</h3>
+<pre><code>Ctrl+N tạo nhánh "bai-giang-ai" → agent làm → review → commit → merge vào main → xóa nhánh
+Ctrl+N tạo nhánh "them-du-an"  (tách từ main mới, đã có bài giảng) → … → merge → xóa
+</code></pre>
+</section>
+
+<!-- 4 -->
+<section id="thu-muc">
+<h2>4. Orca sắp xếp thư mục thế nào (dữ liệu thật trên máy bạn)</h2>
+<pre class="tree"><code>C:\Users\LENOVO\
+├─ AI_In_Action\                          ← THƯ MỤC GỐC = nhánh main
+│   ├─ .git\   (ẩn)                        ← KHO GIT DUY NHẤT, dùng chung cho mọi nhánh
+│   │   ├─ HEAD                  → "ref: refs/heads/main"
+│   │   ├─ refs\heads\main       → c46da48
+│   │   ├─ refs\heads\HoangDuyet2005\gioithieubanthan       → c46da48
+│   │   ├─ refs\heads\HoangDuyet2005\crl-N_hoc-tao-worktree → 69224d5
+│   │   └─ worktrees\            ← "sổ đăng ký" các worktree
+│   └─ bai-giang-ai.html                   ← có ở đây NHỜ merge
+│
+└─ orca\
+    └─ workspaces\
+        ├─ .orca-preparing\                ← thư mục nội bộ của Orca, đừng xóa
+        └─ AI_In_Action\                   ← "ngăn chứa" mang tên project
+            ├─ gioithieubanthan\           ← worktree của nhánh gioithieubanthan
+            │   ├─ .git   (FILE 95 byte)   → "gitdir: C:/Users/LENOVO/AI_In_Action/.git/worktrees/…"
+            │   └─ bai-giang-ai.html       ← agent làm việc ở đây
+            └─ crl-N_hoc-tao-worktree\     ← trống vì commit 69224d5 không có file nào
+                └─ .git   (FILE)</code></pre>
+<h3>Hiểu sơ đồ này trong 5 câu</h3>
+<ol>
+<li>Bạn tạo thư mục project. Đó là <b>thư mục gốc</b> và là nhánh <code>main</code>.</li>
+<li>Bấm <b>Ctrl + N</b> trong Orca: Orca tạo <code>orca\workspaces\&lt;project&gt;\&lt;nhánh&gt;</code>, mỗi nhánh một thư mục.</li>
+<li>Trong thư mục nhánh, <code>.git</code> chỉ là <b>file con trỏ</b> về kho ở thư mục gốc. Vì dùng chung kho nên commit ở nhánh được ghi ngay vào kho gốc.</li>
+<li>Agent làm việc trong thư mục nhánh. Thư mục gốc <b>chưa thấy file mới</b>.</li>
+<li>Về <code>main</code> và <b>merge</b>: Git dời tên <code>main</code> tới commit mới và cập nhật file. Lúc này file mới <b>xuất hiện ở thư mục gốc</b>.</li>
+</ol>
+<div class="note"><b>Commit</b> = ghi vào sổ (kho <code>.git</code>). <b>Merge</b> = chép ra vở chính (thư mục gốc).</div>
+<div class="tip">Không thấy <code>.git</code> trong File Explorer? Vì nó là thư mục ẩn. Bật <b>View → Show → Hidden items</b> để thấy. Chỉ xem, <b>đừng sửa hay xóa</b> gì trong <code>.git</code>.</div>
+<details><summary>Vì sao file ở gốc 19.187 byte còn bản trong worktree 19.122 byte?</summary>
+<p>Chênh đúng 65 byte cho 65 dòng. Do <code>core.autocrlf=true</code>: khi đưa file ra thư mục gốc, Git đổi ký tự xuống dòng sang kiểu Windows (thêm 1 byte mỗi dòng). Nội dung giống hệt, Git coi là một.</p>
+</details>
+</section>
+
+<!-- 5 -->
+<section id="giao-dien">
+<h2>5. Giao diện Orca</h2>
+<table>
+<tr><th>Khu vực</th><th>Để làm gì</th></tr>
+<tr><td><b>Sidebar trái</b></td><td>Search, Tasks, Automations, Orca Mobile; mục <b>Projects</b> liệt kê project và các workspace (worktree). Mỗi workspace hiện tên nhánh, biểu tượng các agent đang mở và trạng thái như “Done - Claude”.</td></tr>
+<tr><td><b>Giữa</b></td><td>Các <b>tab</b>: mỗi tab là một agent hoặc một terminal. Dấu <b>+</b> để mở thêm tab (agent hoặc terminal).</td></tr>
+<tr><td><b>Phải: biểu tượng ô vuông</b></td><td><b>Agent Session History</b>: lịch sử các phiên agent (agent nào, model nào, bao nhiêu tin nhắn, ở worktree nào).</td></tr>
+<tr><td><b>Phải: biểu tượng ⑂</b></td><td><b>Source Control</b>: xem file thay đổi, diff (xanh = thêm, đỏ = xóa), stage, commit, Publish Branch.</td></tr>
+<tr><td><b>Thanh dưới cùng</b></td><td><b>Hạn mức</b> từng agent: ví dụ <code>44% 1d 1h</code> (Claude đã dùng 44% tuần, còn 1 ngày 1 giờ thì reset), <code>0% 27d</code> (Codex, theo tháng), <code>0% Gemini wk</code> (agy, theo tuần).</td></tr>
+<tr><td><b>⚙ góc dưới trái</b></td><td>Settings (giao diện, terminal, agent, thông báo…).</td></tr>
+</table>
+<h3>Lựa chọn lúc thiết lập ban đầu</h3>
+<ul>
+<li><b>Agent mở trong:</b> Terminal UI (chạy được với mọi agent).</li>
+<li><b>Agent mặc định:</b> Claude.</li>
+<li><b>Yolo mode:</b> <span class="tag red">TẮT</span>. Bật lên thì agent tự chạy lệnh và sửa file không hỏi, có agent còn bỏ qua sandbox.</li>
+<li><b>Shell mặc định:</b> PowerShell. <b>Chuột phải trong terminal:</b> dán; <b>Ctrl + chuột phải:</b> mở menu.</li>
+<li><b>Thông báo:</b> bật, để biết khi agent xong việc hoặc cần duyệt.</li>
+<li><b>Codex không dùng shared server (daemon)</b> trong Orca: để mặc định cho trạng thái chính xác.</li>
+</ul>
+</section>
+
+<!-- 6 -->
+<section id="quy-trinh">
+<h2>6. Quy trình làm việc hằng ngày</h2>
+<ol class="steps">
+<li><b>Tạo worktree:</b> nhấn <b>Ctrl + N</b> → chọn Project → ô Smart gõ tên việc (không dấu, gạch ngang, ví dụ <code>them-trang-du-an</code>) → chọn Agent → <b>Create worktree</b>. Nếu agent hỏi trust thư mục project: chọn <b>Yes</b>.</li>
+<li><b>Chuẩn bị agent:</b> gõ <code>/model</code> chọn model phù hợp (Sonnet cho việc thường). Nhấn <b>Shift + Tab</b> chọn chế độ quyền (xem mục 8).</li>
+<li><b>Giao việc:</b> gõ yêu cầu rõ ràng. Ví dụ: <i>“Tạo file index.html giới thiệu bản thân, HTML + CSS thuần.”</i> Việc lớn thì gõ <code>/plan</code> trước để agent lập kế hoạch.</li>
+<li><b>Review:</b> mở <b>⑂ Source Control</b>, bấm từng file xem diff. Kiểm tra có sửa file lạ, link lạ, code thừa không.</li>
+<li><b>Chạy thử:</b> mở tab Terminal trong workspace, ví dụ <code>start index.html</code>. Chưa ưng thì bảo agent sửa tiếp.</li>
+<li><b>Commit:</b> bảo agent <i>“Commit tất cả thay đổi với message phù hợp”</i>, hoặc tự commit trong Source Control. Kiểm tra: <code>git status</code> báo <code>working tree clean</code>.</li>
+<li><b>Merge vào main:</b> bấm workspace <b>main</b> ở sidebar → tab Terminal → <code>git merge HoangDuyet2005/ten-nhanh</code>. Thấy <b>Fast-forward</b> là ổn. Kiểm tra bằng <code>dir</code> và <code>git log --oneline</code>.</li>
+<li><b>Dọn dẹp (khi muốn):</b> chuột phải workspace đã merge → Delete, chọn xóa cả nhánh. Không xóa cũng không sao, nhưng <b>đừng làm tiếp</b> trong worktree đã merge mà quên merge lại.</li>
+</ol>
+<div class="warn">Không làm việc trực tiếp trên <code>main</code>. Trên <code>main</code> chỉ: merge, <code>git pull</code>, <code>git log</code>, và làm gốc để tạo worktree mới.</div>
+</section>
+
+<!-- 7 -->
+<section id="nhieu-agent">
+<h2>7. Nhiều agent, nhiều project</h2>
+<table>
+<tr><th></th><th>Một nhánh, nhiều agent</th><th>Mỗi nhánh một agent (Ctrl + N)</th></tr>
+<tr><td>Cách làm</td><td>Bấm <b>+</b> cạnh tab, mở thêm agent trong cùng worktree</td><td>Mỗi lần Ctrl + N chọn một agent</td></tr>
+<tr><td>File</td><td>Dùng chung một bộ file</td><td>Mỗi agent một bộ file riêng</td></tr>
+<tr><td>Hợp với</td><td>Làm lần lượt: Claude viết, Codex review; hoặc mỗi agent một file khác nhau</td><td>Làm song song việc khác nhau; giao cùng một yêu cầu cho 2 agent để so sánh</td></tr>
+<tr><td>Rủi ro</td><td>Hai agent cùng sửa một file sẽ ghi đè nhau</td><td>Gần như không có</td></tr>
+</table>
+<div class="tip">Không chắc thì chọn <b>Ctrl + N, mỗi nhánh một agent</b>. Lúc đầu chỉ chạy 1–2 agent một lúc, vì việc nào bạn cũng phải review.</div>
+<h3>Thêm project khác</h3>
+<p>Sidebar → biểu tượng 📁 hoặc <b>+</b> cạnh Projects → <b>Add project → Browse folder</b> → chọn <b>đúng thư mục project</b> (không chọn cả <code>C:\Users\LENOVO</code>). Nếu Orca hiện danh sách repo: chỉ tick repo cần, bấm <b>No, import separately</b>. Không bấm “Import as group” hay “Open as Folder” với thư mục người dùng.</p>
+<p>Thư mục chưa có git thì chạy trước:</p>
+<pre><code>cd ~\ten-project
+git init
+git add .
+git commit -m "init"</code></pre>
+<h3>Host khi thêm project</h3>
+<p><b>Local Windows</b> = project trên laptop. <b>Add SSH host</b> dùng sau này nếu muốn chạy agent trên máy chủ (ví dụ máy GPU của Lab).</p>
+</section>
+
+<!-- 8 -->
+<section id="quyen">
+<h2>8. Chế độ quyền &amp; an toàn</h2>
+<h3>Claude Code: nhấn Shift + Tab để đổi</h3>
+<table>
+<tr><th>Dòng dưới cùng hiện</th><th>Claude tự làm được gì</th><th>Khi nào dùng</th></tr>
+<tr><td><b>auto mode on</b> (mặc định)</td><td>Tự làm việc nó đánh giá ít rủi ro, chặn việc rủi ro / đáng ngờ</td><td>Project của bạn, đã quen</td></tr>
+<tr><td><b>manual mode on</b></td><td>Chỉ tự đọc; sửa file hay chạy lệnh đều hỏi</td><td>Mới học, code lạ</td></tr>
+<tr><td><b>accept edits on</b></td><td>Tự tạo / sửa file và lệnh file đơn giản; lệnh khác vẫn hỏi</td><td>Muốn review bằng diff sau khi xong</td></tr>
+<tr><td><b>plan mode on</b></td><td>Chỉ đọc và viết kế hoạch, không sửa code</td><td>Việc lớn: duyệt kế hoạch trước khi làm</td></tr>
+</table>
+<div class="danger">Không dùng <b>bypass permissions</b> / <code>--dangerously-skip-permissions</code>. Trên Windows, Claude Code <b>không có sandbox</b> (sandbox chỉ có trên macOS, Linux, WSL2), nên chế độ quyền là lớp bảo vệ chính.</div>
+<h3>Codex</h3>
+<p>Có <b>sandbox</b> trên Windows (đã cài bản chuẩn, cần Admin một lần). Chế độ quyền hiện tại: <b>Workspace</b> (tự do trong thư mục project, ra ngoài thì hỏi). Đổi bằng <code>/permissions</code>. Codex <b>không hỏi trust thư mục</b> khi mở, nên bạn phải tự <code>cd</code> vào project trước.</p>
+<h3>Antigravity CLI</h3>
+<p>Hỏi trust thư mục giống Claude. Đã chọn không chia sẻ / có chia sẻ dữ liệu tùy lúc thiết lập; đổi lại trong settings của agy.</p>
+<h3>Quy tắc trust thư mục</h3>
+<ul>
+<li><span class="tag">YES</span> thư mục project cụ thể, worktree trong <code>orca\workspaces</code>.</li>
+<li><span class="tag red">NO</span> <code>C:\WINDOWS\System32</code>, <code>C:\Users\LENOVO</code>, <code>C:\Users</code>.</li>
+</ul>
+<div class="warn"><b>PowerShell quyền Admin</b> luôn mở ở <code>System32</code>. Muốn chạy agent ngoài Orca thì <code>cd</code> vào project trước. Terminal bên trong Orca chạy quyền thường và mở sẵn ở thư mục workspace.</div>
+</section>
+
+<!-- 9 -->
+<section id="model">
+<h2>9. Model &amp; hạn mức</h2>
+<table>
+<tr><th>Agent</th><th>Đổi model</th><th>Hạn mức</th><th>Gợi ý</th></tr>
+<tr><td>Claude Code</td><td><code>/model</code></td><td>Gói Pro: theo khung 5 giờ và theo tuần; <b>dùng chung</b> với app Claude chat</td><td>Sonnet cho việc thường, Opus khi việc khó (Opus tốn hạn mức nhanh hơn nhiều)</td></tr>
+<tr><td>Codex</td><td><code>/model</code></td><td>Gói Free: theo tháng</td><td>Dùng khi cần so sánh / review</td></tr>
+<tr><td>Antigravity</td><td><code>/model</code></td><td>Google AI Plus: theo tuần</td><td>Dùng Gemini. Từ 18/11/2026 gói Plus không còn dùng model bên thứ ba (Claude) trong agy</td></tr>
+</table>
+<p>Theo dõi thanh hạn mức ở dưới cùng Orca. Agent nào gần 100% thì chuyển việc sang agent khác.</p>
+</section>
+
+<!-- 10 -->
+<section id="tai-khoan">
+<h2>10. Tài khoản &amp; nơi lưu cấu hình</h2>
+<table>
+<tr><th>Công cụ</th><th>Xem tài khoản</th><th>Đổi tài khoản</th><th>Nơi lưu</th></tr>
+<tr><td>Claude Code</td><td><code>claude auth status</code> hoặc <code>/status</code></td><td><code>claude auth logout</code> → <code>claude auth login</code></td><td><code>~\.claude\</code>, <code>~\.claude.json</code></td></tr>
+<tr><td>Codex</td><td><code>/status</code></td><td><code>codex logout</code> → <code>codex</code></td><td><code>~\.codex\</code> (auth.json, config.toml)</td></tr>
+<tr><td>Antigravity</td><td>hiện ở đầu màn hình khi mở <code>agy</code></td><td>đăng xuất trong agy → chạy lại, chọn Google OAuth</td><td><code>~\.gemini\antigravity-cli\</code>, <code>~\.gemini\config\</code></td></tr>
+<tr><td>GitHub CLI</td><td><code>gh auth status</code></td><td><code>gh auth logout</code> → <code>gh auth login</code></td><td><code>%APPDATA%\GitHub CLI\hosts.yml</code></td></tr>
+<tr><td>Git</td><td><code>git config --global --list</code></td><td><code>git config --global user.email "..."</code></td><td><code>~\.gitconfig</code>; mật khẩu trong Windows Credential Manager</td></tr>
+</table>
+<div class="danger">Các file <code>.credentials.json</code>, <code>auth.json</code>, <code>hosts.yml</code> chứa mã đăng nhập. <b>Không gửi cho ai, không đưa lên GitHub.</b> Mã một lần của <code>gh auth login</code> cũng không gửi cho người khác.</div>
+<div class="note">Gỡ chương trình bằng npm <b>không xóa</b> thư mục cấu hình (ví dụ <code>~\.codex</code>). Vì vậy cài lại có thể tự đăng nhập tài khoản cũ.</div>
+</section>
+
+<!-- 11 -->
+<section id="github">
+<h2>11. Đưa lên GitHub và làm bằng Pull Request</h2>
+<p>Repo <code>AI_In_Action</code> hiện <b>chỉ có trên máy</b>. Khi muốn sao lưu và làm kiểu chuyên nghiệp:</p>
+<h3>Lần đầu: tạo repo trên GitHub</h3>
+<pre><code>cd ~\AI_In_Action
+gh repo create AI_In_Action --private --source . --push</code></pre>
+<p>Hoặc bảo agent ở workspace <code>main</code>: <i>“Tạo repo private trên GitHub tên AI_In_Action và đẩy nhánh main lên.”</i> (Nút <b>Publish Branch</b> trong Source Control cũng dùng để đẩy nhánh lên.)</p>
+<h3>Mỗi việc sau đó: Pull Request thay cho merge trên máy</h3>
+<ol>
+<li>Làm việc trong worktree như bình thường, commit.</li>
+<li>Bảo agent: <i>“Đẩy nhánh lên GitHub và tạo Pull Request”</i> (agent dùng <code>git push</code> + <code>gh pr create</code>).</li>
+<li>Vào GitHub xem PR, bấm <b>Merge</b>.</li>
+<li>Ở workspace <code>main</code> trên máy: <code>git pull</code> để lấy bản mới.</li>
+</ol>
+<div class="warn">Trước lần <code>git push</code> đầu tiên của mỗi project: kiểm tra <code>.gitignore</code> đã chặn <code>.env</code>, khóa API, <code>node_modules/</code>, <code>.venv/</code>.</div>
+</section>
+
+<!-- 12 -->
+<section id="vscode">
+<h2>12. Kết hợp VS Code</h2>
+<ul>
+<li>Mở project: <b>File → Open Folder</b>. Terminal: <b>Ctrl + `</b>, gõ <code>claude</code> / <code>codex</code> / <code>agy</code>.</li>
+<li>Extension chính thức: <b>Claude Code</b>, <b>Codex</b> (dùng chung tài khoản đã đăng nhập ở CLI).</li>
+<li>Mở một worktree của Orca trong VS Code: trong terminal của worktree gõ <code>code .</code></li>
+<li>VS Code <b>không tự tạo worktree</b>. Làm trong VS Code thì tự tạo nhánh trước: <code>git switch -c ten-viec</code>.</li>
+<li>Codex chạy ngoài Orca vẫn dùng daemon mặc định; trong Orca thì không. Hai bên không ảnh hưởng nhau.</li>
+</ul>
+<div class="tip">Chia vai: <b>Orca</b> để giao việc và chạy nhiều agent; <b>VS Code</b> để đọc code kỹ hoặc tự sửa tay.</div>
+</section>
+
+<!-- 13 -->
+<section id="su-co">
+<h2>13. Xử lý sự cố đã gặp</h2>
+<details open><summary>Codex: “an existing daemon release has different contents”</summary>
+<p>Daemon bản cũ còn sót (hay gặp sau khi cập nhật Codex).</p>
+<pre><code>taskkill /F /IM codex.exe
+Remove-Item ~\.codex\packages\app-server-daemon, ~\.codex\app-server-daemon -Recurse -Force</code></pre>
+<p>Hoặc dùng tạm: <code>codex --no-daemon</code></p>
+</details>
+<details><summary>Codex: “Missing optional dependency @openai/codex-win32-x64”</summary>
+<pre><code>npm uninstall -g @openai/codex
+npm cache clean --force
+npm install -g @openai/codex@latest --include=optional</code></pre>
+<p>Lưu ý: gõ nhầm <code>npm i codex</code> sẽ cài một gói khác không liên quan, vào thư mục hiện tại.</p>
+</details>
+<details><summary>Lệnh “is not recognized” sau khi cài (claude, gh, agy…)</summary>
+<p>Đóng và mở lại PowerShell để nạp PATH mới. Claude Code native cần PATH có <code>%USERPROFILE%\.local\bin</code>:</p>
+<pre><code>$p = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($p -notlike "*\.local\bin*") {
+  [Environment]::SetEnvironmentVariable("Path", "$p;$env:USERPROFILE\.local\bin", "User")
+}</code></pre>
+</details>
+<details><summary>Gemini CLI: “This client is no longer supported…”</summary>
+<p>Google đã ngừng Gemini CLI cho tài khoản cá nhân. Dùng <code>agy</code> (Antigravity CLI) thay thế.</p>
+</details>
+<details><summary>winget báo “already installed” dù lệnh không chạy</summary>
+<pre><code>winget install --id GitHub.cli --force</code></pre>
+</details>
+<details><summary>warning: LF will be replaced by CRLF</summary>
+<p>Không phải lỗi. Là cài đặt <code>core.autocrlf=true</code> đang làm việc.</p>
+</details>
+<details><summary>Orca không thấy project trong danh sách import</summary>
+<p>Thư mục chưa phải git repo. Chạy <code>git init</code>, <code>git add .</code>, <code>git commit -m "init"</code> rồi thêm lại.</p>
+</details>
+<details><summary>“Update installed · Restart to update” trong Claude Code</summary>
+<p>Claude Code tự cập nhật. Gõ <code>/exit</code> rồi mở lại agent để dùng bản mới.</p>
+</details>
+</section>
+
+<!-- 14 -->
+<section id="quy-tac">
+<h2>14. Quy tắc vàng</h2>
+<ol class="steps">
+<li><b>Mỗi việc một worktree</b>, không làm thẳng trên <code>main</code>.</li>
+<li><b>Đặt tên nhánh theo việc</b>, không dấu: <code>feat/trang-du-an</code>, <code>fix/loi-menu</code>.</li>
+<li><b>Chỉ trust thư mục project</b>, không bao giờ System32 hay cả thư mục người dùng.</li>
+<li><b>Yolo mode tắt</b>; không dùng bypass permissions.</li>
+<li><b>Review diff trước khi merge</b>: AI có thể sai.</li>
+<li><b>Hai agent không cùng sửa một file cùng lúc.</b></li>
+<li><b>Kiểm tra <code>.gitignore</code></b> chặn <code>.env</code> trước khi push.</li>
+<li><b>Code lạ</b> (repo tải về, người khác gửi): dùng manual hoặc plan mode.</li>
+<li><b>Theo dõi hạn mức</b>, dùng Sonnet cho việc thường.</li>
+<li><b>Không chia sẻ</b> file đăng nhập và mã đăng nhập một lần.</li>
+</ol>
+</section>
+
+<!-- 15 -->
+<section id="lenh">
+<h2>15. Bảng lệnh nhanh</h2>
+<h3>Phím tắt Orca</h3>
+<table>
+<tr><td><b>Ctrl + N</b></td><td>Tạo worktree mới</td></tr>
+<tr><td><b>Ctrl + Shift + ↑ / ↓</b></td><td>Chuyển workspace lên / xuống</td></tr>
+<tr><td><b>Chuột phải / Ctrl + chuột phải</b> (trong terminal)</td><td>Dán / mở menu</td></tr>
+</table>
+<h3>Trong agent</h3>
+<table>
+<tr><td><code>/model</code></td><td>Đổi model (cả 3 agent)</td></tr>
+<tr><td><code>/status</code></td><td>Xem tài khoản, cấu hình (Claude, Codex)</td></tr>
+<tr><td><b>Shift + Tab</b></td><td>Đổi chế độ quyền (Claude)</td></tr>
+<tr><td><code>/plan …</code></td><td>Bắt Claude lập kế hoạch trước</td></tr>
+<tr><td><code>/permissions</code></td><td>Đổi quyền (Codex)</td></tr>
+<tr><td><code>/exit</code>, <code>/quit</code>, Ctrl + C</td><td>Thoát agent</td></tr>
+<tr><td><code>codex agents</code></td><td>Xem các phiên Codex đang chạy ngầm (ngoài Orca)</td></tr>
+</table>
+<h3>Git hay dùng</h3>
+<pre><code>git status                         # có gì thay đổi / chưa commit
+git log --oneline                  # lịch sử commit
+git branch                         # các nhánh
+git worktree list                  # các worktree và thư mục của chúng
+git add .                          # chọn tất cả thay đổi
+git commit -m "mô tả"              # lưu một commit
+git merge HoangDuyet2005/ten-nhanh # gộp nhánh vào nhánh hiện tại (đứng ở main)
+git switch -c ten-nhanh            # tạo nhánh mới (khi làm ngoài Orca)
+git pull / git push                # lấy về / đẩy lên GitHub
+start ten-file.html                # mở file bằng trình duyệt</code></pre>
+<h3>Kiểm tra nhanh bộ công cụ</h3>
+<pre><code>git --version; gh auth status; claude --version; claude doctor; codex --version; agy --version</code></pre>
+</section>
+
+</main>
+</div>
+</body>
+</html>
